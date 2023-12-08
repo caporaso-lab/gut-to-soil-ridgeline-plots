@@ -1,8 +1,9 @@
-from typing import Dict, List
 import json
+import os
 from pathlib import Path
+import sys
+from typing import Dict, List
 
-import altair as alt
 import pandas as pd
 
 def calculate_distances(
@@ -10,6 +11,7 @@ def calculate_distances(
     matrix_fp: str,
     bucket_id: int,
     n: int,
+    from_beginning: bool = False,
     pre_or_post_roll: str = 'post',
     compare_only_own_fecal: bool = False,
     sep: str = '\t'
@@ -26,6 +28,10 @@ def calculate_distances(
     n : int
         The number of time points to use beginning with the chronologically
         last time point and moving backwards.
+    from_beginning : bool
+        Wether to select the `n` time points from the beginning or the end
+        of the chronologically sorted time points. End (False) by default.
+        Set to True for beginning.
     pre_or_post_roll : str
         Whether to use 'pre-roll' or 'post-roll' composting samples. Post-roll
         by default.
@@ -34,14 +40,14 @@ def calculate_distances(
         by default.
     sep : str
         The separator to use when parsing the metadata. The distance matrix
-        is assumed to be in .tsv format. 
-    
+        is assumed to be in .tsv format.
+
     Returns
     -------
     dict of str -> list of float
         A dictionary of sample type comparison to an array of the selected
         distances. Each array is equal in length to `n` times the number of
-        values of for that comparison. 
+        values of for that comparison.
     '''
     # validate inputs
     if pre_or_post_roll == 'post':
@@ -53,7 +59,7 @@ def calculate_distances(
 
     # md wrangling
     md = pd.read_csv(md_fp, sep=sep)
-    distances = pd.read_csv(matrix_fp, sep='\t', index_col=0)
+    distances_df = pd.read_csv(matrix_fp, sep='\t', index_col=0)
 
     bucket_col = 'Bucket#'
     sample_type_col = 'Sample-Type'
@@ -66,8 +72,7 @@ def calculate_distances(
     md[week_col] = md[week_col].astype(int)
 
     ### TODO: change this once missing ids figured out
-    md = md[md[sample_id_col].isin(distances.index)]
-    
+    md = md[md[sample_id_col].isin(distances_df.index)]
     ### ---
 
     # collect bucket sample ids of interest
@@ -77,7 +82,7 @@ def calculate_distances(
     ]
     bucket_sample_ids = list(
         bucket_samples_df.sort_values(
-            by=week_col, ascending=False
+            by=week_col, ascending=from_beginning
         )[sample_id_col].head(n)
     )
 
@@ -101,7 +106,7 @@ def calculate_distances(
     )
 
     # fetch all cells from the distance matrix and return
-    distances_dict = {
+    distances = {
         'fecal': [],
         'soil': [],
         'compost': []
@@ -114,24 +119,29 @@ def calculate_distances(
     for bucket_sample_id in bucket_sample_ids:
         for comp, comp_ids in comps.items():
             for comp_id in comp_ids:
-                distances_dict[comp].append(
-                    distances.at[bucket_sample_id, comp_id]
+                distances[comp].append(
+                    distances_df.at[bucket_sample_id, comp_id]
                 )
-    
-    return distances_dict
-            
 
+    return distances
+
+
+# python analysis.py path-to-output-dir
 if __name__ == '__main__':
     for bucket_id in range(1, 17):
+        out_path = sys.argv[1]
+        os.makedirs(out_path, exist_ok=True)
+
         # change me
         distances = calculate_distances(
             md_fp='final-analysis-metadata.tsv',
             matrix_fp='distance-matrix.tsv',
             bucket_id=bucket_id,
             n=3,
+            from_beginning=False,
             compare_only_own_fecal=False
         )
 
-        fp = Path('figures') / 'data' / f'distances-bucket-{bucket_id}.json'
+        fp = Path(out_path) / f'distances-bucket-{bucket_id}.json'
         with open(fp, 'w') as fh:
             json.dump(distances, fh)
