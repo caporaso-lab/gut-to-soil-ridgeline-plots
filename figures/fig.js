@@ -6,8 +6,9 @@ const innerWidth = width - margin.left - margin.right
 const innerHeight = height - margin.top - margin.bottom
 
 
-// -------------------- MAIN -------------------- 
+// -------------------- MAIN --------------------
 const numBuckets = 16
+const dataDir = 'data/data-n3-frombeginning'
 
 const svg = d3.select('body')
     .append('svg')
@@ -20,13 +21,13 @@ for (let bucketId of d3.range(1, numBuckets)) {
         continue
     }
 
-    let distancesFile = `data/distances-bucket-${bucketId}.json`
+    let distancesFile = `${dataDir}/distances-bucket-${bucketId}.json`
     let data = await parseData(distancesFile)
 
     let fig = svg.append('g')
         .attr('transform', `translate(0, ${(bucketId - 1) * height})`)
         .attr('class', 'sub-figure')
-    
+
     drawFig(data, fig, bucketId)
 }
 
@@ -36,7 +37,7 @@ async function parseData(file) {
     const distances = await d3.json(file)
 
     let distancesLong = []
-    let comparisons = ['compost', 'soil', 'fecal']
+    let comparisons = ['food compost', 'soil', 'fecal']
     comparisons.forEach(comp => {
         distances[comp].forEach(dist => {
             distancesLong.push({comparison: comp, distance: dist})
@@ -55,14 +56,14 @@ function createFig() {
         .attr('width', width)
         .attr('height', height)
 
-   return svg 
+   return svg
 }
 
 
 function drawFig(data, svg, bucketId) {
     // -------------------- SCALES --------------------
     const disExtent = d3.extent(data.map(d => d.distance))
-    const range = disExtent[1] - disExtent[0] 
+    const range = disExtent[1] - disExtent[0]
     const padding = range * 0.1
     let distanceScale = d3.scaleLinear()
         .domain(d3.nice(disExtent[0] - padding, disExtent[1] + padding, 10))
@@ -71,7 +72,7 @@ function drawFig(data, svg, bucketId) {
     let compScale = d3.scaleBand()
         .domain(data.map(d => d.comparison))
         .range([margin.top, margin.top + innerHeight])
-    
+
 
     // -------------------- AXES --------------------
     const xAxis = d3.axisBottom(distanceScale);
@@ -94,6 +95,13 @@ function drawFig(data, svg, bucketId) {
         .attr('y', margin.top / 2)
         .attr('text-anchor', 'middle')
         .text(`Bucket ${bucketId}`)
+
+    svg.append('text')
+        .attr('class', 'subtitle')
+        .attr('x', margin.left + innerWidth / 2)
+        .attr('y', margin.top / 2 + 25)
+        .attr('text-anchor', 'middle')
+        .text(`n=3 chronologically first timepoints`)
 
     svg.append('text')
         .attr('class', 'axis-label')
@@ -127,10 +135,10 @@ function drawFig(data, svg, bucketId) {
         .attr('fill-opacity', 0.4)
 
 
-    // -------------------- PLOT CLOUD -------------------- 
-    const bandwidth = 0.02 
+    // -------------------- PLOT CLOUD --------------------
+    const bandwidth = 0.02
 
-    for (let comp of ['fecal', 'soil', 'compost']) {
+    for (let comp of ['fecal', 'soil', 'food compost']) {
         let compData = data.filter(
             d => d.comparison == comp
         ).map(
@@ -142,7 +150,7 @@ function drawFig(data, svg, bucketId) {
         let cloudScale = d3.scaleLinear()
             .domain(d3.extent(density.map(d => d[1])))
             .range([
-                compScale(comp) + compScale.bandwidth() / 2, 
+                compScale(comp) + compScale.bandwidth() / 2,
                 compScale(comp) + 25
             ])
 
@@ -151,9 +159,7 @@ function drawFig(data, svg, bucketId) {
             .y0(compScale(comp) + compScale.bandwidth() / 2)
             .y1(d => cloudScale(d[1]))
             .curve(d3.curveBasis)
-        
-        console.log(density)
-        console.log(compData)
+
         svg.append('path')
             .datum(density)
             .attr('fill', getColor(comp))
@@ -175,7 +181,7 @@ function epanechnikov(bandwidth) {
             return 0.75 * (1 - x * x) / bandwidth
         } else {
             return 0
-        } 
+        }
     }
 }
 
@@ -192,7 +198,7 @@ function getColor(comp) {
         return '#6A4A47'
     } else if (comp == 'soil') {
         return '#749C75'
-    } else if (comp == 'compost') {
+    } else if (comp == 'food compost') {
         return '#F3C178'
     }
 }

@@ -109,12 +109,12 @@ def calculate_distances(
     distances = {
         'fecal': [],
         'soil': [],
-        'compost': []
+        'food compost': []
     }
     comps = {
         'fecal': fecal_sample_ids,
         'soil': soil_sample_ids,
-        'compost': compost_sample_ids
+        'food compost': compost_sample_ids
     }
     for bucket_sample_id in bucket_sample_ids:
         for comp, comp_ids in comps.items():
@@ -138,7 +138,7 @@ if __name__ == '__main__':
             matrix_fp='distance-matrix.tsv',
             bucket_id=bucket_id,
             n=3,
-            from_beginning=False,
+            from_beginning=True,
             compare_only_own_fecal=False
         )
 

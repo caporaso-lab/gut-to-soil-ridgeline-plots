@@ -5,6 +5,9 @@ text {
 .axis-label {
     font-size: 22px;
 }
+.subtitle {
+    font-size: 12px;
+}
 
 .x-axis text {
     font-size: 12px;
