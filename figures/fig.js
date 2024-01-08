@@ -8,36 +8,66 @@ const innerHeight = height - margin.top - margin.bottom
 
 // -------------------- MAIN --------------------
 const numBuckets = 16
-const dataDir = 'data/data-n3-frombeginning'
+const dataDir = 'data/n3-frombeginning'
 
-const svg = d3.select('body')
-    .append('svg')
-    .attr('width', width)
-    .attr('height', height * numBuckets)
-
-for (let bucketId of d3.range(1, numBuckets)) {
+   
+for (let bucketId of d3.range(1, numBuckets + 1)) {
     if (bucketId == 8) {
-        // no data
+         // no data
         continue
     }
 
     let distancesFile = `${dataDir}/distances-bucket-${bucketId}.json`
     let data = await parseData(distancesFile)
-
-    let fig = svg.append('g')
-        .attr('transform', `translate(0, ${(bucketId - 1) * height})`)
-        .attr('class', 'sub-figure')
-
+   
+    let fig = d3.select('body').append('svg')
+        .attr('width', width)
+        .attr('height', height)
+        
+    // crop distributions below x-axis minimum
+    let clip = fig.append('clipPath')            
+        .attr('id', `clip-${bucketId}`)
+        .append('rect')
+        .attr('x', margin.left)
+        .attr('y', margin.top)
+        .attr('width', innerWidth)
+        .attr('height', innerHeight)
+        
     drawFig(data, fig, bucketId)
 }
 
+function downloadAllFigs(event, d) {
+    const allSvgElems = document.querySelectorAll('svg');
+    for (let i = 0; i < allSvgElems.length; i++) {
+        (function(index) {
+            setTimeout(function() {
+                let svgElem = allSvgElems[index]
+                let serializer = new XMLSerializer()
+                let source = serializer.serializeToString(svgElem)
+                let url = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(source)
+                let link = document.createElement("a")
+                link.href = url
+                link.download = `bucket-${index + 1}.svg`
+                document.body.appendChild(link)
+                link.click()
+                document.body.removeChild(link)
+            }, index * 200)
+        })(i);
+    }
+}
 
-// -------------------- DATA --------------------
+d3.select('body').insert('button', ':first-child')
+    .text('download figures')
+    .attr('class', 'download-button')
+    .on('click', downloadAllFigs)
+
+
+// data
 async function parseData(file) {
     const distances = await d3.json(file)
 
     let distancesLong = []
-    let comparisons = ['food compost', 'soil', 'fecal']
+    let comparisons = ['food compost', 'soil', 'fecal', 'bulking material']
     comparisons.forEach(comp => {
         distances[comp].forEach(dist => {
             distancesLong.push({comparison: comp, distance: dist})
@@ -49,32 +79,19 @@ async function parseData(file) {
 }
 
 
-// -------------------- CREATE FIGURE --------------------
-function createFig() {
-    const svg = d3.select('body')
-        .append('svg')
-        .attr('width', width)
-        .attr('height', height)
-
-   return svg
-}
-
-
+// figure
 function drawFig(data, svg, bucketId) {
-    // -------------------- SCALES --------------------
-    const disExtent = d3.extent(data.map(d => d.distance))
-    const range = disExtent[1] - disExtent[0]
-    const padding = range * 0.1
+    // scales
     let distanceScale = d3.scaleLinear()
-        .domain(d3.nice(disExtent[0] - padding, disExtent[1] + padding, 10))
+        .domain([0.5, 1])
         .range([margin.left, margin.left + innerWidth])
-
+    
     let compScale = d3.scaleBand()
         .domain(data.map(d => d.comparison))
         .range([margin.top, margin.top + innerHeight])
 
 
-    // -------------------- AXES --------------------
+    // axes
     const xAxis = d3.axisBottom(distanceScale);
     svg.append('g')
         .attr('transform', `translate(0,${margin.top + innerHeight})`)
@@ -88,7 +105,7 @@ function drawFig(data, svg, bucketId) {
         .call(yAxis)
 
 
-    // -------------------- AXIS LABELS --------------------
+    // axis labels
     svg.append('text')
         .attr('class', 'axis-label')
         .attr('x', margin.left + innerWidth / 2)
@@ -119,9 +136,12 @@ function drawFig(data, svg, bucketId) {
         .text('Comparison')
 
 
-    // -------------------- PLOT SCATTER --------------------
+    // plot scatter
     let jitter = d3.randomNormal(0, 8)
 
+    let clipUrl = `url(#clip-${bucketId})`
+    console.log('bucket num', bucketId)
+    console.log('clip url', clipUrl)
     svg.selectAll('circle')
         .data(data)
         .enter()
@@ -133,12 +153,13 @@ function drawFig(data, svg, bucketId) {
         })
         .attr('fill', d => getColor(d.comparison))
         .attr('fill-opacity', 0.4)
+        .attr('clip-path', clipUrl)
 
 
-    // -------------------- PLOT CLOUD --------------------
+    // plot cloud
     const bandwidth = 0.02
 
-    for (let comp of ['fecal', 'soil', 'food compost']) {
+    for (let comp of ['fecal', 'soil', 'food compost', 'bulking material']) {
         let compData = data.filter(
             d => d.comparison == comp
         ).map(
@@ -166,11 +187,12 @@ function drawFig(data, svg, bucketId) {
             .attr('stroke', 'gray')
             .attr('stroke-width', 1.5)
             .attr('d', area)
+            .attr('clip-path', clipUrl)
     }
 }
 
 
-// -------------------- HELPERS --------------------
+// helpers
 function kde(kernel, thresholds, data) {
     return thresholds.map(t => [t, d3.mean(data, d => kernel(t - d))])
 }
@@ -186,7 +208,7 @@ function epanechnikov(bandwidth) {
 }
 
 function getThresholds(data, numThresholds) {
-    // call separatley for each comparison distribution
+    // call separately for each comparison distribution
     const extent = d3.extent(data)
     const niceExtent = d3.nice(...extent, 10)
     const thresholds = d3.ticks(...niceExtent, numThresholds)
@@ -195,11 +217,13 @@ function getThresholds(data, numThresholds) {
 
 function getColor(comp) {
     if (comp == 'fecal') {
-        return '#6A4A47'
+        return '#8c564b'
     } else if (comp == 'soil') {
-        return '#749C75'
+        return '#000000'
     } else if (comp == 'food compost') {
-        return '#F3C178'
+        return '#ff0000'
+    } else if (comp == 'bulking material') {
+        return '#008000'
     }
 }
 
