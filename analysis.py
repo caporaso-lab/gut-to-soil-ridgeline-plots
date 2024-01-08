@@ -6,6 +6,7 @@ from typing import Dict, List
 
 import pandas as pd
 
+
 def calculate_distances(
     md_fp: str,
     matrix_fp: str,
@@ -71,9 +72,9 @@ def calculate_distances(
     md[week_col].fillna(value=-1, inplace=True)
     md[week_col] = md[week_col].astype(int)
 
-    ### TODO: change this once missing ids figured out
+    # TODO: change this once missing ids figured out
     md = md[md[sample_id_col].isin(distances_df.index)]
-    ### ---
+    # ---
 
     # collect bucket sample ids of interest
     bucket_samples_df = md[
@@ -104,17 +105,22 @@ def calculate_distances(
     compost_sample_ids = list(
         md[md[sample_type_col] == 'Food-Compost'][sample_id_col]
     )
+    bulking_material_ids = list(
+        md[md[sample_type_col] == 'Bulking Material'][sample_id_col]
+    )
 
     # fetch all cells from the distance matrix and return
     distances = {
         'fecal': [],
         'soil': [],
-        'food compost': []
+        'food compost': [],
+        'bulking material': [],
     }
     comps = {
         'fecal': fecal_sample_ids,
         'soil': soil_sample_ids,
-        'food compost': compost_sample_ids
+        'food compost': compost_sample_ids,
+        'bulking material': bulking_material_ids,
     }
     for bucket_sample_id in bucket_sample_ids:
         for comp, comp_ids in comps.items():
