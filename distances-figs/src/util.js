@@ -36,7 +36,6 @@ export function epanechnikov(bandwidth) {
     }
 }
 
-
 export function getThresholds(data, numThresholds) {
     const extent = d3.extent(data);
     const niceExtent = d3.nice(...extent, 10);
@@ -44,7 +43,6 @@ export function getThresholds(data, numThresholds) {
 
     return thresholds;
 }
-
 
 export function getColor(comp, timepoints) {
     let opacity;
@@ -66,4 +64,20 @@ export function getColor(comp, timepoints) {
     }
 
     return `#${color}${opacity}`;
+}
+
+export function calculateDensity(data) {
+    const bandwidth = 0.0175;
+    let thresholds = getThresholds(data, 20);
+    let density = kde(epanechnikov(bandwidth), thresholds, data);
+
+    let max = 0;
+    for (let pair of density) {
+        if (pair[1] > max) {
+            max = pair[1];
+        }
+    }
+
+    console.log('max density is', max);
+    return { density, max };
 }

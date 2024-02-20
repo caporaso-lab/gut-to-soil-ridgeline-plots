@@ -15,24 +15,29 @@ function handleDownload(e) {
 }
 
 function handleIndividualDownload(e) {
-    let fig = document.querySelector(`.bucket-${bucket}-plot`);
+    for (let i = 0; i < 17; i++) {
+        let fig = document.querySelector(`.bucket-${i}-plot`);
 
-    domtoimage.toSvg(fig)
-        .then(dataUrl => {
-            const downloadLink = document.createElement("a");
-            downloadLink.href = dataUrl;
-            downloadLink.download = `bucket-${bucket}.svg`;
-            downloadLink.click();
-        })
-        .catch(error => {
-            console.log('error: ', error);
-        })
+        if (fig == null) {
+            continue;
+        }
+
+        domtoimage.toSvg(fig)
+            .then(dataUrl => {
+                const downloadLink = document.createElement("a");
+                downloadLink.href = dataUrl;
+                downloadLink.download = `bucket-${i}.svg`;
+                downloadLink.click();
+            })
+            .catch(error => {
+                console.log('error: ', error);
+            })
+        }
 }
 
 let bucket = '';
 </script>
 
-<input bind:value={bucket} type="text" />
 <input type="submit" on:click={handleDownload} value="Download" />
 <button on:click={handleIndividualDownload}>Download Individual</button>
 

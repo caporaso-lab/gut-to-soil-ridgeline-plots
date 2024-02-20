@@ -2,7 +2,7 @@
 import * as d3 from 'd3';
 import { onMount } from 'svelte';
 
-import { parseData } from '../util.js';
+import { parseData, calculateDensity } from '../util.js';
 
 import AxisBottom from './AxisBottom.svelte';
 import AxisLeft from './AxisLeft.svelte';
@@ -11,10 +11,11 @@ import Cloud from './Cloud.svelte';
 
 export let filepaths;
 export let leftAxis;
+export let grid;
 
-let distances = massageData();
+let promise = massageData();
 async function massageData() {
-	let distances = {
+	let densities = {
 		start: {},
 		end: {},
 	};
@@ -31,11 +32,12 @@ async function massageData() {
 				d => d.distance
 			)
 
-			distances[direction][sampleType] = compData;
+			let { density, max } = calculateDensity(compData);
+			densities[direction][sampleType] = density;
 		}
 	}
 
-	return distances;
+	return densities;
 }
 
 const dim = {
@@ -59,7 +61,7 @@ let distScale = d3.scaleLinear()
 	.range([margin.left, dim.width - margin.right])
 
 let compScale = d3.scaleBand()
-	.domain(['food compost', 'soil', 'fecal', 'bulking material'])
+	.domain(['fecal', 'bulking material', 'soil', 'food compost'])
 	.range([dim.height - margin.bottom, margin.top])
 
 onMount(() => {
@@ -75,7 +77,10 @@ onMount(() => {
 let bucket = filepaths.bucket;
 </script>
 
-<div class={`bucket-${bucket}-plot`}>
+<div
+	class={`bucket-${bucket}-plot`}
+	style="display: {grid ? 'inline' : 'block'}"
+>
 	<svg class={`bucket-${bucket}`} xmlns="http://www.w3.org/2000/svg">
 		<text transform="translate({dim.width / 2}, 20)">Bucket {bucket}</text>
 
@@ -84,13 +89,13 @@ let bucket = filepaths.bucket;
 			<AxisLeft {dim} {margin} scale={compScale} />
 		{/if}
 
-		{#await distances}
+		{#await promise}
 			<p>Loading...</p>
-		{:then distances}
+		{:then densities}
 			{#each ['start', 'end'] as time}
 				{#each compScale.domain() as comp}
 					<Cloud
-						data={distances[time][comp]}
+						density={densities[time][comp]}
 						{comp}
 						{time}
 						{compScale}

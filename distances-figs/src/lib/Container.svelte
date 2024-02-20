@@ -19,14 +19,20 @@ for (let bucketNum of bucketNums) {
         end: endFile,
     });
 }
+
+let grid = false;
 </script>
 
 <div class="container">
     {#each filepaths as pair, i}
-        {#if i % 3 == 0}
-            <Plot filepaths={pair} leftAxis={true}/>
+        {#if grid}
+            {#if i % 3 == 0}
+                <Plot filepaths={pair} leftAxis={true} {grid} />
+            {:else}
+                <Plot filepaths={pair} leftAxis={false} {grid} />
+            {/if}
         {:else}
-            <Plot filepaths={pair} leftAxis={false}/>
+            <Plot filepaths={pair} leftAxis={true} {grid} />
         {/if}
     {/each}
 
