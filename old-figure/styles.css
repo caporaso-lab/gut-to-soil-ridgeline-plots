@@ -1,0 +1,21 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+text {
+    font-family: 'verdana';
+}
+
+.axis-label {
+    font-size: 22px;
+}
+.subtitle {
+    font-size: 12px;
+}
+
+.x-axis text {
+    font-size: 12px;
+}
+.y-axis text {
+    font-size: 14px;
+}

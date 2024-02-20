@@ -1,4 +1,4 @@
-figures/data
+data/
 .ipynb_checkpoints/
 # Logs
 logs
