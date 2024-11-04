@@ -1,10 +1,9 @@
 <script>
-export let dim;
-export let margin;
-export let scale;
+    export let dim;
+    export let margin;
+    export let scale;
 
-const ticks = scale.ticks()
-
+    const ticks = scale.ticks();
 </script>
 
 <g>
@@ -14,21 +13,46 @@ const ticks = scale.ticks()
         x2={dim.width - margin.right}
         y2={dim.height - margin.bottom}
         stroke="black"
-        stroke-width=2
+        stroke-width="2"
         stroke-linecap="round"
     />
-    {#each ticks as tick}
-        <g transform="translate({scale(tick)}, {dim.height - margin.bottom})">
-            <text y={20}>{tick}</text>
-            <line y2=5 stroke="black" stroke-width=2 stroke-linecap="round" />
-        </g>
+    {#each ticks as tick, i}
+        {#if i == 0}
+            <g
+                transform="translate(
+                    {scale(tick)}, {dim.height - margin.bottom}
+                )"
+            >
+                <text y={20} transform="translate(5, 0)">{tick}</text>
+                <line
+                    y2="5"
+                    stroke="black"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                />
+            </g>
+        {:else}
+            <g
+                transform="translate(
+                    {scale(tick)}, {dim.height - margin.bottom}
+                )"
+            >
+                <text y={20}>{tick}</text>
+                <line
+                    y2="5"
+                    stroke="black"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                />
+            </g>
+        {/if}
     {/each}
 </g>
 
 <style>
-text {
-    text-anchor: middle;
-    font-size: 12px;
-    font-family: sans-serif;
-}
+    text {
+        text-anchor: middle;
+        font-size: 17px;
+        font-family: sans-serif;
+    }
 </style>

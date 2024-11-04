@@ -1,10 +1,9 @@
 <script>
-export let dim;
-export let margin;
-export let scale;
+    export let dim;
+    export let margin;
+    export let scale;
 
-const ticks = scale.domain()
-
+    const ticks = scale.domain();
 </script>
 
 <g>
@@ -14,7 +13,7 @@ const ticks = scale.domain()
         x2={margin.left}
         y2={dim.height - margin.bottom}
         stroke="black"
-        stroke-width=2
+        stroke-width="2"
         stroke-linecap="round"
     />
     {#each ticks as tick}
@@ -23,9 +22,9 @@ const ticks = scale.domain()
                 {tick}
             </text>
             <line
-                x2=5
+                x2="5"
                 stroke="black"
-                stroke-width=2
+                stroke-width="2"
                 stroke-linecap="round"
             />
         </g>
@@ -33,9 +32,9 @@ const ticks = scale.domain()
 </g>
 
 <style>
-text {
-    text-anchor: end;
-    font-size: 12px;
-    font-family: sans-serif;
-}
+    text {
+        text-anchor: end;
+        font-size: 17px;
+        font-family: sans-serif;
+    }
 </style>

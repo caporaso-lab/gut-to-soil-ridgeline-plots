@@ -1,7 +1,5 @@
 <script>
 import Container from './lib/Container.svelte';
-
-
 </script>
 
 
