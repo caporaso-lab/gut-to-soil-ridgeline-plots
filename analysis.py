@@ -52,9 +52,9 @@ def calculate_distances(
     '''
     # validate inputs
     if pre_or_post_roll == 'post':
-        bucket_sample_type = 'Compost Post-Roll'
+        bucket_sample_type = 'Human Excrement Compost'
     elif pre_or_post_roll == 'pre':
-        bucket_sample_type = 'Compost Pre-Roll'
+        bucket_sample_type = 'Human Excrement Compost Pre-Roll'
     else:
         raise ValueError('Use one of pre/post for pre_or_post_roll')
 
@@ -62,19 +62,21 @@ def calculate_distances(
     md = pd.read_csv(md_fp, sep=sep)
     distances_df = pd.read_csv(matrix_fp, sep='\t', index_col=0)
 
-    bucket_col = 'Bucket#'
-    sample_type_col = 'Sample-Type'
+    # remove comment lines
+    md = md[~ md['sample-id'].str.startswith('#')]
+
+    bucket_col = 'Bucket'
+    sample_type_col = 'SampleType'
     sample_id_col = 'sample-id'
-    week_col = 'Week'
+    week_col = 'Composting Time Point'
 
     md[bucket_col].fillna(value=-1, inplace=True)
     md[bucket_col] = md[bucket_col].astype(int)
     md[week_col].fillna(value=-1, inplace=True)
     md[week_col] = md[week_col].astype(int)
 
-    # TODO: change this once missing ids figured out
+    # keep only sample ids present in distance matrix
     md = md[md[sample_id_col].isin(distances_df.index)]
-    # ---
 
     # collect bucket sample ids of interest
     bucket_samples_df = md[
@@ -88,22 +90,22 @@ def calculate_distances(
     )
 
     # collect comparison ids of interest
-    fecal_samples_df = md[md[sample_type_col] == 'Self Sample']
+    fecal_samples_df = md[md[sample_type_col] == 'Human Excrement']
     if compare_only_own_fecal:
         fecal_samples_df = fecal_samples_df[
             fecal_samples_df[bucket_col] == bucket_id
         ]
     fecal_sample_ids = list(
         fecal_samples_df[
-            fecal_samples_df[sample_type_col] == 'Self Sample'
+            fecal_samples_df[sample_type_col] == 'Human Excrement'
         ][sample_id_col]
     )
 
     soil_sample_ids = list(
-        md[md[sample_type_col] == 'EMP-Soils'][sample_id_col]
+        md[md[sample_type_col] == 'Soil'][sample_id_col]
     )
     compost_sample_ids = list(
-        md[md[sample_type_col] == 'Food-Compost'][sample_id_col]
+        md[md[sample_type_col] == 'Food Compost'][sample_id_col]
     )
     bulking_material_ids = list(
         md[md[sample_type_col] == 'Bulking Material'][sample_id_col]
@@ -140,8 +142,8 @@ if __name__ == '__main__':
 
         # change me
         distances = calculate_distances(
-            md_fp='final-analysis-metadata.tsv',
-            matrix_fp='distance-matrix.tsv',
+            md_fp='./data/nov-1-2024-metadata.tsv',
+            matrix_fp='./data/nov-4-2024-distance-matrix.tsv',
             bucket_id=bucket_id,
             n=3,
             from_beginning=True,
